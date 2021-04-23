@@ -1,0 +1,86 @@
+<html>
+ <body>
+ </body>
+<script src="./game/game.js"></script>
+<script src="./game/game.display.js"></script>
+<script src="./game/game.keycode.js"></script>
+<script src="./game/game.control.js"></script>
+<script src="/socket.io/socket.io.js"></script>
+<script>
+
+  // début du code isolé
+  var socket = io();
+  var joueur = '';
+  var scoreEquip1 = 0;
+  var scoreEquip2 = 0;
+  var requestAnimId;
+  
+  var initialisation = function() {
+    // le code de l'initialisation
+
+    // Implémentation du joueur
+    socket.on('JoueurConnect', (joueurNum) => {
+      joueur = joueurNum;
+    });
+
+    game.init();
+
+    // Implémentation de la balle
+    socket.on('retourInitBall', (ballPosX, ballPosY, ballDirX, ballDirY) => {
+        game.updateBallValues(ballPosX, ballPosY, ballDirX, ballDirY);  
+    });
+
+    socket.on('retourInitJoueur1', (J1) => {
+        game.updatePlayerOne(J1);
+    });
+    socket.on('retourInitJoueur2', (J2) => {
+        game.updatePlayerTwo(J2);
+    });
+    socket.on('retourInitJoueur3', (J3) => {
+        game.updatePlayerThree(J3);
+    });
+    socket.on('retourInitJoueur4', (J4) => {
+        game.updatePlayerFour(J4);
+    });
+
+    requestAnimId = window.requestAnimationFrame(main); // premier appel de main au rafraîchissement de la page
+  }
+  
+  var main = function() {
+    // le code du jeu
+    game.clearLayer(game.playersBallLayer);
+    game.displayPlayers();
+    game.moveBall();
+    game.collideBallWithPlayersAndAction();
+
+    // Envoie au serveur les update des joueurs
+    switch(joueur){
+      case 'Joueur1':
+        game.movePlayerOne();
+        socket.emit('InitJoueur1', game.playerOne);
+        break
+      case 'Joueur2':
+        game.movePlayerTwo();
+        socket.emit('InitJoueur2', game.playerTwo);
+        break
+      case 'Joueur3':
+        game.movePlayerThree();
+        socket.emit('InitJoueur3', game.playerThree);
+        break
+      case 'Joueur4':
+        game.movePlayerFour();
+        socket.emit('InitJoueur4', game.playerFour);
+        break
+    }
+
+    // Envoie au serveur la position de la
+    socket.emit('InitBalle', game.ball.posX, game.ball.posY, game.ball.directionX, game.ball.directionY);
+
+    requestAnimId = window.requestAnimationFrame(main); // rappel de main au prochain rafraîchissement de la page
+  }
+  
+  window.onload = initialisation; // appel de la fonction initialisation au chargement de la page
+  
+  // fin du code isolé
+</script>
+</html>
